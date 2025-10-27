@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 import json
 from pathlib import Path
@@ -6,7 +6,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from backtest_engine import backtest_tickers
 
-app = FastAPI(title="Testfire 4", version="0.2.0")
+app = FastAPI(title="Testfire 4", version="0.2.1")
 
 # -------------------------------
 # State management
@@ -52,8 +52,9 @@ async def startup_event():
 # Routes
 # -------------------------------
 
-@app.get("/health")
-def health():
+@app.api_route("/health", methods=["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"])
+async def health(request: Request):
+    """Universal health check for Render + UptimeRobot."""
     return {"status": "ok"}
 
 @app.get("/", response_class=HTMLResponse)

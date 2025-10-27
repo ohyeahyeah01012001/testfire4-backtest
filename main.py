@@ -6,7 +6,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from backtest_engine import backtest_tickers
 
-app = FastAPI(title="Testfire 4", version="0.2.2")
+app = FastAPI(title="Testfire 4", version="0.2.3")
 
 # -------------------------------
 # State management
@@ -55,8 +55,8 @@ async def startup_event():
 @app.api_route("/health", methods=["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS", "PATCH"])
 async def health(request: Request):
     """
-    Universal health endpoint compatible with Render + UptimeRobot.
-    Always returns 200 OK and plain-text 'OK' for any HTTP method.
+    Universal health endpoint for Render + UptimeRobot.
+    Always returns 200 OK with plain-text 'OK' for any HTTP method.
     """
     return PlainTextResponse("OK", status_code=200)
 

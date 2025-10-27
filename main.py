@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 import json
 from pathlib import Path
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from backtest_engine import backtest_tickers
 
-app = FastAPI(title="Testfire 4", version="0.2.1")
+app = FastAPI(title="Testfire 4", version="0.2.2")
 
 # -------------------------------
 # State management
@@ -52,10 +52,13 @@ async def startup_event():
 # Routes
 # -------------------------------
 
-@app.api_route("/health", methods=["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS"])
+@app.api_route("/health", methods=["GET", "POST", "HEAD", "PUT", "DELETE", "OPTIONS", "PATCH"])
 async def health(request: Request):
-    """Universal health check for Render + UptimeRobot."""
-    return {"status": "ok"}
+    """
+    Universal health endpoint compatible with Render + UptimeRobot.
+    Always returns 200 OK and plain-text 'OK' for any HTTP method.
+    """
+    return PlainTextResponse("OK", status_code=200)
 
 @app.get("/", response_class=HTMLResponse)
 def home():

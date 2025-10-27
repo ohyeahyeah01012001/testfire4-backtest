@@ -6,7 +6,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from backtest_engine import backtest_tickers
 
-app = FastAPI(title="Testfire 4", version="0.3.0")
+app = FastAPI(title="Testfire 4", version="0.3.1")
 
 # -------------------------------
 # State management
@@ -36,7 +36,6 @@ executor = ThreadPoolExecutor(max_workers=1)
 async def run_backtest_background():
     """Run the backtest in a separate thread so it doesn’t block FastAPI."""
     loop = asyncio.get_event_loop()
-    # ✅ New: automatically reads tickers.txt (no hardcoded symbols)
     await loop.run_in_executor(executor, lambda: backtest_tickers())
     print("✅ Background backtest completed")
 
@@ -78,34 +77,48 @@ def home():
     </html>
     """
 
+# -------------------------------
+# Visual ranking table (Step 5B)
+# -------------------------------
+
 @app.get("/ranking", response_class=HTMLResponse)
 def ranking():
     state = load_state()
-    if not state.get("results"):
+    results = state.get("results", [])
+    if not results:
         return """
-        <!doctype html>
-        <html><body style="font-family:system-ui;margin:2rem">
-          <h2>Ranking</h2>
-          <p>No results yet. Waiting for first backtest...</p>
-        </body></html>
-        """
+        <!doctype html><html><body style="font-family:system-ui;margin:2rem">
+        <h2>Ranking</h2><p>No results yet. Waiting for first backtest...</p>
+        </body></html>"""
 
-    table_rows = "".join(
-        f"<tr><td>{r['ticker']}</td><td>{r['return']:.2f}%</td></tr>"
-        for r in state["results"]
-    )
+    max_ret = max(abs(r["return"]) for r in results) or 1
+    rows = ""
+    for r in results:
+        color = "#9ef89e" if r["return"] >= 0 else "#f89e9e"
+        width = int(abs(r["return"]) / max_ret * 150)
+        rows += f"""
+          <tr>
+            <td>{r['ticker']}</td>
+            <td>{r['return']:.2f}%</td>
+            <td>
+              <div style='background:{color};width:{width}px;height:12px;border-radius:4px'></div>
+            </td>
+          </tr>"""
 
-    html = f"""
-    <!doctype html>
-    <html><body style="font-family:system-ui;margin:2rem">
-      <h2>Ranking (last update: {state.get('last_update','unknown')})</h2>
+    last = state.get("last_update", "unknown")
+    return f"""
+    <!doctype html><html><body style="font-family:system-ui;margin:2rem">
+      <h2>Ranking (last update: {last})</h2>
       <table border="1" cellspacing="0" cellpadding="6">
-        <tr><th>Ticker</th><th>Return (%)</th></tr>
-        {table_rows}
+        <tr><th>Ticker</th><th>Return (%)</th><th>Visual</th></tr>
+        {rows}
       </table>
-    </body></html>
-    """
-    return html
+      <p style="margin-top:1em">Total tickers: {len(results)}</p>
+    </body></html>"""
+
+# -------------------------------
+# Refresh trigger
+# -------------------------------
 
 @app.get("/refresh")
 async def refresh():
